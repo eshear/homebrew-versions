@@ -51,11 +51,12 @@ class Postgresql8 < Formula
     system "make install"
 
     %w[ adminpack dblink fuzzystrmatch lo uuid-ossp pg_buffercache pg_trgm
-        pgcrypto tsearch2 vacuumlo xml2 intarray ].each do |a|
+        pgcrypto tsearch2 vacuumlo xml2 intarray hstore ].each do |a|
       system "cd contrib/#{a}; make install"
     end
 
     (prefix+'org.postgresql.postgres.plist').write startup_plist
+    (prefix+'postgresql.sysctl.conf').write sysctl_conf
   end
 
   def check_python_arch
@@ -90,6 +91,9 @@ To build plpython against a specific Python, set PYTHON prior to brewing:
 See:
   http://www.postgresql.org/docs/8.4/static/install-procedure.html
 
+If you want to avoid running with almost no shared memory:
+    cp #{prefix}/postgresql.sysctl.conf /etc/sysctl.conf
+    cat /etc/sysctl.conf | xargs -n 1 sudo sysctl -w
 
 If this is your first install, create a database with:
     initdb #{var}/postgres
@@ -150,5 +154,15 @@ To install gems without sudo, see the Homebrew wiki.
 </dict>
 </plist>
     EOPLIST
+  end
+  
+  def sysctl_conf
+    return <<-EOCONF
+kern.sysv.shmmax=1073741824
+kern.sysv.shmmin=1
+kern.sysv.shmmni=32
+kern.sysv.shmseg=8
+kern.sysv.shmall=1073741824
+    EOCONF
   end
 end
